@@ -1,5 +1,5 @@
 .main-header .navbar {
-  background-color: #1890ff;
+  background-color: #775c4c;
 }
 .main-header .navbar .nav > li > a {
   color: #ffffff;
@@ -39,15 +39,15 @@
   }
 }
 .main-header .logo {
-  background-color: #1890ff;
+  background-color: #775c4c;
   color: #ffffff;
   border-bottom: 0 solid transparent;
 }
 .main-header .logo:hover {
-  background-color: #1681e5;
+  background-color: #775c4c;
 }
 .main-header li.user-header {
-  background-color: #1890ff;
+  background-color: #775c4c;
 }
 .content-header {
   background: transparent;
@@ -83,7 +83,7 @@
   background: #fafafa;
 }
 .sidebar-menu > li.active {
-  border-left-color: #1890ff;
+  border-left-color: #775c4c;
 }
 .sidebar-menu > li.active > a {
   font-weight: 600;
@@ -173,7 +173,7 @@ th[aria-selected=true] .ui-jqgrid-sortable {color:#1890ff;}
 
 .tabpanel_mover li {padding:1px 16px 2px 3px;margin:6px 0 6px 6px;border:1px solid #e4e4e4;
 	border-radius:3px;box-shadow:0 0 8px #e0e0e0;background:#fff;box-shadow:0 0 5px #e6e6e6;}
-.tabpanel_mover li.active {background-color:#3aa0ff;}
+.tabpanel_mover li.active {background-color:#775c4c;}
 .tabpanel_mover li.active div {color:#fff;}
 .tabpanel_mover li .closer {font:6px/1 FontAwesome;top:6px;right:2px;background:none;opacity:0.8}
 .tabpanel_mover li .closer:before {content:"\f00d";}
