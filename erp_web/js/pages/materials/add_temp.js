@@ -84,6 +84,34 @@ $.get("../../pages/template/base.html?7890", function(tem) {
         $("#cancelAccount").linkbutton({
             iconCls: 'icon-cancel'
         });
+
+
+        /**
+         * 加载采购
+         */
+        $("#depot").html(template({
+            depotScanSelect: true
+        }));
+        $('#scanDlg').dialog({
+            closed: true,
+            modal: true,
+            collapsible: false,
+            closable: true
+        });
+        $("#scanDlg #name,#scanDlg #productName").validatebox({
+            required: true,
+            validType: 'length[2,30]'
+        });
+        $("#scanDlg #warehousing,#scanDlg #truckage").numberbox({
+            min:0,
+            precision:2
+        });
+        $("#saveScan").linkbutton({
+            iconCls: 'icon-ok'
+        });
+        $("#cancelScan").linkbutton({
+            iconCls: 'icon-cancel'
+        });
     }
 });
 
@@ -308,5 +336,16 @@ function bindAccountEvent() {
                 return;
             }
         });
+    });
+}
+
+
+//绑定仓库扫码事件
+function bindDepotScanInEvent() {
+    $("#depotScanFM #name").focus();
+    $("#saveScan").off("click").on("click", function () {
+        var infoObj = $("#depotScanFM").serializeObject();
+        infoObj.type = 0;
+        $('#scanDlg').dialog('close');
     });
 }

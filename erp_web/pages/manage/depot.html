@@ -15,6 +15,8 @@
     <script type="text/javascript" src="/js/easyui/jquery.easyui.min.js"></script>
     <script type="text/javascript" src="/js/easyui/locale/easyui-lang-zh_CN.js"></script>
     <script type="text/javascript" src="/js/common/common.js"></script>
+    <script type="text/javascript" src="/js/lodash.min.js"></script>
+
 </head>
 <body>
 <!-- 数据显示table -->
@@ -49,6 +51,12 @@
                 <td style="padding:5px">
                     <input name="name" id="name" type="text" class="easyui-textbox"
                            data-options="required:true,validType:'length[2,30]'" style="width: 230px;"/>
+                </td>
+            </tr>
+            <tr>
+                <td>仓库分区</td>
+                <td style="padding:5px">
+                    <input class="easyui-combobox" id="area" name="area" style="width:230px;">
                 </td>
             </tr>
             <tr>
@@ -171,6 +179,15 @@
                     }
                 },
                 {title: '仓库名称', field: 'name', width: 200},
+                {title: '仓库区域', field: 'area', width: 200,
+                    formatter: function (value, rec) {
+                    var areastr ='';
+                        _.forEach(areaData,function (item) {
+                            areastr =  areastr + item.text + ', ';
+                        });
+                        return areastr;
+                    }
+                },
                 {title: '仓库地址', field: 'address', width: 200},
                 {title: '仓储费', field: 'warehousing', width: 60},
                 {title: '搬运费', field: 'truckage', width: 60},
@@ -440,6 +457,13 @@
     var depotID = 0;
     //保存编辑前的名称
     var oldDepot = "";
+    var areaData = [{
+        id:1,
+        text:'A'
+    },{
+        id:2,
+        text:'B'
+    }];
 
     function addDepot() {
         if(checkPower()){
@@ -450,6 +474,35 @@
         $('#depotFM').form('clear');
         $("#name").focus();
         $("#selectType").val("principal");
+
+        var areaOpt = {
+            data:areaData,
+            valueField:'text',
+            textField:'text',
+            panelHeight:'auto',
+            iconWidth:22,
+            icons:[{iconCls:'icon-add',
+                handler:function(e){
+                    var tx = $(e.handleObj.data.target).combobox('getValue');
+                    if(tx)
+                    {
+                        var retObj = areaData.find(function (item) {
+                            return item.text == tx;
+                        })
+                        if(!retObj || !retObj.id)
+                        {
+                            areaData.push({
+                                id:areaData.length,
+                                text:$(e.handleObj.data.target).combobox('getValue')
+                            })
+                        }
+                    }
+                    $(e.handleObj.data.target).combobox('loadData',areaData);
+
+                }}]
+        }
+        $("#area").combobox(areaOpt);
+
         oldDepot = "";
         depotID = 0;
         url = '/depot/add';
@@ -462,6 +515,7 @@
         if (checkDepotName()) {
             return;
         }
+
         $.ajax({
             url: url,
             type: "post",
@@ -492,6 +546,50 @@
         $("#sort").textbox("setValue", rowsdata.sort);
         $("#remark").textbox("setValue", rowsdata.remark);
         $("#address").textbox("setValue", rowsdata.address);
+
+        var areaOpt = {
+            data:areaData,
+            valueField:'text',
+            textField:'text',
+            panelHeight:'auto',
+            iconWidth:22,
+            icons:[{iconCls:'icon-add',
+                handler:function(e){
+                    var tx = $(e.handleObj.data.target).combobox('getValue');
+                    if(tx)
+                    {
+                        var retObj = areaData.find(function (item) {
+                            return item.text == tx;
+                        })
+                        if(!retObj || !retObj.id)
+                        {
+                            areaData.push({
+                                id:areaData.length,
+                                text:$(e.handleObj.data.target).combobox('getValue')
+                            })
+                        }
+                    }
+                    $(e.handleObj.data.target).combobox('loadData',areaData);
+
+                }},{iconCls:'icon-cut',
+                handler:function(e){
+                    var tx = $(e.handleObj.data.target).combobox('getValue');
+                    if(tx)
+                    {
+                        var retObj = areaData.find(function (item) {
+                            return item.text == tx;
+                        })
+                        if(retObj&& retObj.id)
+                        {
+                            _.remove(areaData,retObj)
+                        }
+                    }
+                    $(e.handleObj.data.target).combobox('loadData',areaData);
+                    $(e.handleObj.data.target).combobox('clear');
+                }}]
+        }
+        $("#area").combobox(areaOpt);
+
         $("#warehousing").textbox("setValue", rowsdata.warehousing);
         $("#truckage").textbox("setValue", rowsdata.truckage);
         $("#principalName").textbox("setValue", rowsdata.principalName);
@@ -507,6 +605,7 @@
     //检查名称是否存在 ++ 重名无法提示问题需要跟进
     function checkDepotName() {
         var name = $.trim($("#name").val());
+        if(!name || !name.length) return true;
         //表示是否存在 true == 存在 false = 不存在
         var flag = false;
         //开始ajax名称检验，不能重名

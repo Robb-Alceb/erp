@@ -614,6 +614,10 @@
 		var monthTime = getNowFormatMonth();
 		var isShowAnotherDepot = true; //显示对方仓库,true为隐藏,false为显示
 		var depotHeadName = ""; //仓库名称
+
+		var depotAreaName = "仓库区域"; //仓库区域
+		var deportAreaDefaultData = [{id:1,text:'A'},{id:1,text:'B'}];
+
 		var depotUrl = ""; //仓库接口地址
 		var depotTextField = ""; //仓库下拉名称
 		var anotherDepotHeadName = ""; //对方仓库的列的标题
@@ -677,6 +681,22 @@
 									var type = "select"; //type 类型：点击 click，选择 select
 									findStockNumById(depotId, mId, monthTime, body, input, ratioDepot, type);
 								}
+							}
+						}
+					}
+				},
+				{ title: depotAreaName, field: 'DepotArea', editor: 'validatebox',hidden:isShowTaxColumn, width: 90,
+					formatter: function (value, row, index) {
+						return deportAreaDefaultData[0].text;
+					},
+					editor: {
+						type: 'combobox',
+						options: {
+							valueField: 'id',
+							textField: 'text',
+							data:deportAreaDefaultData,
+							onSelect:function(rec){
+
 							}
 						}
 					}
@@ -940,6 +960,10 @@
 			anotherDepotHeadName = "调入仓库";
 		}
 		depotHeadName = "仓库名称";
+
+		var depotAreaName = "仓库区域"; //仓库区域
+		var deportAreaDefaultData = [{id:1,text:'A'},{id:1,text:'B'}];
+
 		var isShowTaxColumn = false; //是否显示税率相关的列,true为隐藏,false为显示
 		if(listSubType == "调拨" || listSubType == "其它" || listSubType == "零售" || listSubType == "零售退货" || listSubType == "采购订单" || listSubType == "销售订单" || listSubType == "组装单" || listSubType == "拆卸单"){
 			isShowTaxColumn = true; //隐藏
@@ -969,6 +993,11 @@
 			columns:[[
 				{ title: '商品类型',field: 'MType',width:80, hidden:isShowMaterialTypeColumn},
 				{ title: depotHeadName,field: 'DepotName',editor:'validatebox',width:90},
+				{ title: depotAreaName, field: 'DepotArea', width: 90,
+					formatter: function (value, row, index) {
+						return deportAreaDefaultData[0].text;
+					}
+				},
 				{ title: '条码_品名(规格)(型号)(扩展信息)(单位)',field: 'MaterialName',width:270},
                 { title: '库存',field: 'Stock',width:50},
 				{ title: anotherDepotHeadName,field: 'AnotherDepotName',hidden:isShowAnotherDepot,width:90},
@@ -1853,6 +1882,13 @@
             window.open("../../js/print/print_form.html","location:No;status:No;help:No;dialogWidth:800px;dialogHeight:600px;scroll:auto;");
 		});
 
+		$("#scanDepotHeadShow").off("click").on("click",function(){
+			$('#scanDlg').dialog('open').dialog('setTitle','扫码入库');
+			$(".window-mask").css({width: webW, height: webH});
+			$('#depotScanFM').form('clear');
+			bindDepotScanInEvent();
+		});
+
 		//初始化键盘enter事件
 		$(document).keydown(function(event){
 		   	//兼容 IE和firefox 事件
@@ -2464,7 +2500,8 @@
 	}
     //新增仓库
     function appendDepot() {
-        $('#depotDlg').dialog('open').dialog('setTitle', '<img src="/js/easyui/themes/icons/edit_add.png"/>&nbsp;增加仓库信息');
+        $('#depotDlg').dialog('open').dialog('setTitle',
+			'<img src="/js/easyui/themes/icons/edit_add.png"/>&nbsp;增加仓库信息');
         $(".window-mask").css({width: webW, height: webH});
         $('#depotFM').form('clear');
         bindDepotEvent();
