@@ -94,7 +94,8 @@
 			amountNum = "LSCK";
 		}
         else if(listTitle === "销售订单列表"){
-            listType = "其它";
+            // listType = "其它";
+			listType = "门店采购";
             listSubType = "销售订单";
             payTypeTitle = "隐藏";
             organUrl = cusUrl;

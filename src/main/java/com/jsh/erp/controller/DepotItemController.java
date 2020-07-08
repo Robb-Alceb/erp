@@ -2,6 +2,7 @@ package com.jsh.erp.controller;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.jsh.erp.bean.dto.ScanInDto;
 import com.jsh.erp.constants.BusinessConstants;
 import com.jsh.erp.constants.ExceptionConstants;
 import com.jsh.erp.datasource.entities.*;
@@ -10,6 +11,7 @@ import com.jsh.erp.exception.BusinessRunTimeException;
 import com.jsh.erp.service.MaterialExtend.MaterialExtendService;
 import com.jsh.erp.service.depotItem.DepotItemService;
 import com.jsh.erp.service.material.MaterialService;
+import com.jsh.erp.service.serialNumber.SerialNumberService;
 import com.jsh.erp.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.File;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -43,6 +46,9 @@ public class DepotItemController {
 
     @Resource
     private MaterialExtendService materialExtendService;
+
+    @Resource
+    private SerialNumberService serialNumberService;
 
     /**
      * 只根据商品id查询单据列表
@@ -718,5 +724,16 @@ public class DepotItemController {
             res.code = 500;
         }
         return res;
+    }
+
+    /**
+     * 扫码出入库
+     * @param scanInDto
+     * @return
+     * @throws Exception
+     */
+    @PostMapping(value = "/scanIn")
+    public Object scanIn(@Valid @RequestBody ScanInDto scanInDto)  throws Exception{
+        return depotItemService.scanIn(scanInDto);
     }
 }

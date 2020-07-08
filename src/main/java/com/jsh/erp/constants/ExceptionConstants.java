@@ -386,6 +386,16 @@ public class ExceptionConstants {
     public static final String ORGA_USER_REL_EDIT_FAILED_MSG = "修改机构用户关联关系失败";
 
 
+
+
+    //出/入库失败
+    public static final int DEPOT_ITEM_SCAN_IN_CODE = 12500000;
+    public static final String DEPOT_ITEM_SCAN_IN_MSG = "扫码入/出库单不存在";
+    public static final int DEPOT_ITEM_SCAN_IN_STATUS_CODE = 12500001;
+    public static final String DEPOT_ITEM_SCAN_IN_STATUS_MSG = "扫码入库单状态错误";
+    public static final int DEPOT_ITEM_SCAN_IN_NUMBER_CODE = 12500002;
+    public static final String DEPOT_ITEM_SCAN_IN_NUMBER_MSG = "扫码入库数量已满";
+
     /**
      * 标准正常返回/操作成功返回
      * @return
@@ -403,4 +413,5 @@ public class ExceptionConstants {
         success.put(GLOBAL_RETURNS_MESSAGE, USER_OVER_LIMIT_FAILED_MSG);
         return success;
     }
+
 }

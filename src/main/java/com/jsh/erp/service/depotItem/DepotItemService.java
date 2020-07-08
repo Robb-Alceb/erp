@@ -2,6 +2,7 @@ package com.jsh.erp.service.depotItem;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.jsh.erp.bean.dto.ScanInDto;
 import com.jsh.erp.constants.BusinessConstants;
 import com.jsh.erp.constants.ExceptionConstants;
 import com.jsh.erp.datasource.entities.*;
@@ -30,6 +31,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -353,11 +355,36 @@ public class DepotItemService {
                     JSONObject tempInsertedJson = JSONObject.parseObject(insertedJson.getString(i));
                     depotItem.setHeaderid(headerId);
                     Long materialExtendId = tempInsertedJson.getLong("MaterialExtendId");
+                    /**
+                     * 这里如果是由商城系统后台发起采购请求，没有MaterialExtendId。则需要自动选择一个MaterialExtend保存
+                     */
+                    if(materialExtendId == null){
+                        MaterialExtend defaultMe = null;
+                        Long materialId = tempInsertedJson.getLong("materialId");
+                        ArrayList<Long> mids = new ArrayList<>();
+                        mids.add(materialId);
+                        /**
+                         * 这里和查询列表使用同一个方法，保证价格是一致的
+                         */
+                        List<MaterialExtend> listByMIds = materialExtendService.getListByMIds(mids);
+                        if(listByMIds != null && listByMIds.size() > 0){
+                            defaultMe = listByMIds.get(0);
+                            materialExtendId = listByMIds.get(0).getId();
+                            if(tempInsertedJson.get("operNumber") != null && !StringUtil.isEmpty(tempInsertedJson.get("operNumber").toString())){
+                                depotItem.setOpernumber(tempInsertedJson.getBigDecimal("operNumber"));
+                                depotItem.setAllprice(defaultMe.getWholesaleDecimal().multiply(depotItem.getOpernumber()));
+                            }
+                            depotItem.setUnitprice(defaultMe.getWholesaleDecimal());
+                        }
+                    }
                     Long materialId = materialExtendService.getMaterialExtend(materialExtendId).getMaterialId();
                     depotItem.setMaterialid(materialId);
-                    depotItem.setMaterialExtendId(tempInsertedJson.getLong("MaterialExtendId"));
-                    depotItem.setMunit(tempInsertedJson.getString("Unit"));
-                    if (!StringUtil.isEmpty(tempInsertedJson.get("OperNumber").toString())) {
+//                    depotItem.setMaterialExtendId(tempInsertedJson.getLong("MaterialExtendId"));
+                    depotItem.setMaterialExtendId(materialExtendId);
+                    if (tempInsertedJson.get("Unit") != null && !StringUtil.isEmpty(tempInsertedJson.get("Unit").toString())) {
+                        depotItem.setMunit(tempInsertedJson.getString("Unit"));
+                    }
+                    if (tempInsertedJson.get("OperNumber") != null && !StringUtil.isEmpty(tempInsertedJson.get("OperNumber").toString())) {
                         depotItem.setOpernumber(tempInsertedJson.getBigDecimal("OperNumber"));
                         try {
                             String Unit = tempInsertedJson.get("Unit").toString();
@@ -382,13 +409,13 @@ public class DepotItemService {
                             logger.error(">>>>>>>>>>>>>>>>>>>设置基础数量异常", e);
                         }
                     }
-                    if (!StringUtil.isEmpty(tempInsertedJson.get("UnitPrice").toString())) {
+                    if (tempInsertedJson.get("UnitPrice") != null && !StringUtil.isEmpty(tempInsertedJson.get("UnitPrice").toString())) {
                         depotItem.setUnitprice(tempInsertedJson.getBigDecimal("UnitPrice"));
                     }
-                    if (!StringUtil.isEmpty(tempInsertedJson.get("TaxUnitPrice").toString())) {
+                    if (tempInsertedJson.get("TaxUnitPrice") != null && !StringUtil.isEmpty(tempInsertedJson.get("TaxUnitPrice").toString())) {
                         depotItem.setTaxunitprice(tempInsertedJson.getBigDecimal("TaxUnitPrice"));
                     }
-                    if (!StringUtil.isEmpty(tempInsertedJson.get("AllPrice").toString())) {
+                    if (tempInsertedJson.get("AllPrice") != null && !StringUtil.isEmpty(tempInsertedJson.get("AllPrice").toString())) {
                         depotItem.setAllprice(tempInsertedJson.getBigDecimal("AllPrice"));
                     }
                     depotItem.setRemark(tempInsertedJson.getString("Remark"));
@@ -398,13 +425,13 @@ public class DepotItemService {
                     if (tempInsertedJson.get("AnotherDepotId") != null && !StringUtil.isEmpty(tempInsertedJson.get("AnotherDepotId").toString())) {
                         depotItem.setAnotherdepotid(tempInsertedJson.getLong("AnotherDepotId"));
                     }
-                    if (!StringUtil.isEmpty(tempInsertedJson.get("TaxRate").toString())) {
+                    if (tempInsertedJson.get("TaxRate") != null && !StringUtil.isEmpty(tempInsertedJson.get("TaxRate").toString())) {
                         depotItem.setTaxrate(tempInsertedJson.getBigDecimal("TaxRate"));
                     }
-                    if (!StringUtil.isEmpty(tempInsertedJson.get("TaxMoney").toString())) {
+                    if (tempInsertedJson.get("TaxMoney") != null && !StringUtil.isEmpty(tempInsertedJson.get("TaxMoney").toString())) {
                         depotItem.setTaxmoney(tempInsertedJson.getBigDecimal("TaxMoney"));
                     }
-                    if (!StringUtil.isEmpty(tempInsertedJson.get("TaxLastMoney").toString())) {
+                    if (tempInsertedJson.get("TaxLastMoney") != null && !StringUtil.isEmpty(tempInsertedJson.get("TaxLastMoney").toString())) {
                         depotItem.setTaxlastmoney(tempInsertedJson.getBigDecimal("TaxLastMoney"));
                     }
                     if (tempInsertedJson.get("OtherField1") != null) {
@@ -700,5 +727,52 @@ public class DepotItemService {
     public BigDecimal getOutNumByParam(Long depotId, Long mId, String beginTime, String endTime, Long tenantId){
         DepotItemVo4Stock stockObj = depotItemMapperEx.getStockByParam(depotId, mId, beginTime, endTime, tenantId);
         return stockObj.getOutNum();
+    }
+
+    /**
+     * 商品扫码入库或出库
+     * @param scanInDto
+     * @return
+     */
+    public Object scanIn(ScanInDto scanInDto) throws Exception{
+        /**
+         * 1.检查该入库/出库单状态
+         */
+        DepotHead depotHead = depotHeadMapper.selectByPrimaryKey(scanInDto.getDepotheadId());
+        if(depotHead == null ){
+            throw new BusinessRunTimeException(ExceptionConstants.DEPOT_ITEM_SCAN_IN_CODE,
+                    ExceptionConstants.DEPOT_ITEM_SCAN_IN_MSG);
+        }
+        if(!depotHead.getStatus().equals(BusinessConstants.BILLS_STATUS_AUDIT) ){
+            throw new BusinessRunTimeException(ExceptionConstants.DEPOT_ITEM_SCAN_IN_STATUS_CODE,
+                    ExceptionConstants.DEPOT_ITEM_SCAN_IN_STATUS_MSG);
+        }
+        /**
+         * 2.检查该入库/出库item是否已完全入库
+         */
+        int i = serialNumberService.countByDepothead(scanInDto.getDepotheadId(), scanInDto.getMaterialId());
+        DepotItem depotItem = depotItemMapper.selectByPrimaryKey(scanInDto.getId());
+        if(new BigDecimal(String.valueOf(i + scanInDto.getNumber())).compareTo(depotItem.getOpernumber()) > 0 ){
+            throw new BusinessRunTimeException(ExceptionConstants.DEPOT_ITEM_SCAN_IN_NUMBER_CODE,
+                    ExceptionConstants.DEPOT_ITEM_SCAN_IN_NUMBER_MSG);
+        }
+        /**
+         * 3.绑定入库单/出库和序列号
+         */
+        SerialNumber serialNumber = serialNumberService.updateSerialNumber(scanInDto);
+        /**
+         * 4.如果是门店采购生成的出库单，则需要调用商城后台修改库存数量
+         */
+        if(serialNumber != null){
+            if(new BigDecimal(String.valueOf(i + scanInDto.getNumber())).compareTo(depotItem.getOpernumber()) == 0){
+
+            }
+        }
+        return ExceptionConstants.standardSuccess();
+    }
+
+    public DepotItem getByHiAndMi(Long materialExtendId, Long depotHeadId) {
+        depotItemMapperEx.getByHiAndMi(materialExtendId, depotHeadId);
+        return null;
     }
 }

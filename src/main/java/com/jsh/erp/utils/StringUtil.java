@@ -212,7 +212,7 @@ public class StringUtil {
     }
 
     public static String getInfo(String search, String key){
-        String value = "";
+        String value = null;
         if(search!=null) {
             JSONObject obj = JSONObject.parseObject(search);
             value = obj.getString(key);

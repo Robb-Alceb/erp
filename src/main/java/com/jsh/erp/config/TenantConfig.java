@@ -36,7 +36,15 @@ public class TenantConfig {
                 if(tenantId!=null){
                     return new LongValue(Long.parseLong(tenantId.toString()));
                 } else {
-                    return null;
+                    /**
+                     * 这里从header中获取租户id，以便用于api接口调用
+                     */
+                    tenantId = request.getHeader("tenantId");
+                    if(tenantId == null){
+                        return null;
+                    }else{
+                        return new LongValue(Long.parseLong(tenantId.toString()));
+                    }
                 }
             }
 
@@ -49,6 +57,9 @@ public class TenantConfig {
             public boolean doTableFilter(String tableName) {
                 //获取开启状态
                 Object tenantId = request.getSession().getAttribute("tenantId");
+                if(tenantId == null){
+                    tenantId = request.getHeader("tenantId");
+                }
                 if(tenantId!=null) {
                     //从session中获取租户id
                     String loginName = null;

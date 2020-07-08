@@ -1,6 +1,7 @@
 package com.jsh.erp.service.depotHead;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.jsh.erp.constants.BusinessConstants;
 import com.jsh.erp.constants.ExceptionConstants;
 import com.jsh.erp.datasource.entities.DepotHead;
@@ -16,6 +17,7 @@ import com.jsh.erp.datasource.vo.DepotHeadVo4List;
 import com.jsh.erp.datasource.vo.DepotHeadVo4StatementAccount;
 import com.jsh.erp.exception.BusinessRunTimeException;
 import com.jsh.erp.exception.JshException;
+import com.jsh.erp.mall.client.ShopOutClient;
 import com.jsh.erp.service.depotItem.DepotItemService;
 import com.jsh.erp.service.log.LogService;
 import com.jsh.erp.service.serialNumber.SerialNumberService;
@@ -59,6 +61,8 @@ public class DepotHeadService {
     DepotItemMapperEx depotItemMapperEx;
     @Resource
     private LogService logService;
+    @Resource
+    private ShopOutClient shopOutClient;
 
 
     public DepotHead getDepotHead(long id)throws Exception {
@@ -468,7 +472,7 @@ public class DepotHeadService {
      * @throws Exception
      */
     @Transactional(value = "transactionManager", rollbackFor = Exception.class)
-    public void addDepotHeadAndDetail(String beanJson, String inserted, String deleted, String updated,Long tenantId,
+    public String addDepotHeadAndDetail(String beanJson, String inserted, String deleted, String updated,Long tenantId,
                                       HttpServletRequest request) throws Exception {
         logService.insertLog("单据",
                 BusinessConstants.LOG_OPERATION_TYPE_ADD,
@@ -481,6 +485,15 @@ public class DepotHeadService {
         depotHead.setOperpersonname(userInfo==null?null:userInfo.getUsername());
         depotHead.setCreatetime(new Timestamp(System.currentTimeMillis()));
         depotHead.setStatus(BusinessConstants.BILLS_STATUS_UN_AUDIT);
+        /**
+         * 当订单编号为空时(此时为商城后台调用)，默认生成一个销售订单编号
+         */
+        if(StringUtils.isEmpty(depotHead.getNumber())){
+            String number = "XSDD"+this.buildOnlyNumber();
+            depotHead.setNumber(number);
+            depotHead.setDefaultnumber(number);
+            depotHead.setOpertime(new Timestamp(System.currentTimeMillis()));
+        }
         try{
             depotHeadMapper.insertSelective(depotHead);
         }catch(Exception e){
@@ -493,14 +506,17 @@ public class DepotHeadService {
             }
         }
         //根据单据编号查询单据id
-        DepotHeadExample dhExample = new DepotHeadExample();
+/*        DepotHeadExample dhExample = new DepotHeadExample();
         dhExample.createCriteria().andDefaultnumberEqualTo(depotHead.getDefaultnumber()).andDeleteFlagNotEqualTo(BusinessConstants.DELETE_FLAG_DELETED);
         List<DepotHead> list = depotHeadMapper.selectByExample(dhExample);
         if(list!=null) {
             Long headId = list.get(0).getId();
-            /**入库和出库处理单据子表信息*/
+            *//**入库和出库处理单据子表信息*//*
             depotItemService.saveDetials(inserted,deleted,updated,headId,tenantId, request);
-        }
+        }*/
+        /**入库和出库处理单据子表信息*/
+        depotItemService.saveDetials(inserted,deleted,updated,depotHead.getId(),tenantId, request);
+
         /**如果关联单据号非空则更新订单的状态为2 */
         if(depotHead.getLinknumber()!=null) {
             DepotHead depotHeadOrders = new DepotHead();
@@ -509,10 +525,12 @@ public class DepotHeadService {
             example.createCriteria().andNumberEqualTo(depotHead.getLinknumber());
             try{
                 depotHeadMapper.updateByExampleSelective(depotHeadOrders, example);
+                shopOutClient.outDone(depotHead.getLinknumber());
             }catch(Exception e){
                 JshException.writeFail(logger, e);
             }
         }
+        return depotHead.getNumber();
     }
 
     /**
@@ -636,5 +654,9 @@ public class DepotHeadService {
 
     public BigDecimal getBuyAndSaleRetailStatistics(String type, String subType, Integer hasSupplier, String beginTime, String endTime) {
         return depotHeadMapperEx.getBuyAndSaleRetailStatistics(type, subType, hasSupplier, beginTime, endTime);
+    }
+
+    public DepotHead selectById(Long depotheadId) {
+        return depotHeadMapper.selectByPrimaryKey(depotheadId);
     }
 }

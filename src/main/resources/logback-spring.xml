@@ -23,7 +23,7 @@
         </rollingPolicy>
     </appender>
 
-    <root level="ERROR">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="TIME_FILE"/>
     </root>

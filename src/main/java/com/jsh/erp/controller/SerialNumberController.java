@@ -3,17 +3,27 @@ package com.jsh.erp.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.jsh.erp.constants.ExceptionConstants;
-import com.jsh.erp.datasource.entities.SerialNumberEx;
+import com.jsh.erp.datasource.entities.*;
 import com.jsh.erp.exception.BusinessParamCheckingException;
 import com.jsh.erp.exception.BusinessRunTimeException;
+import com.jsh.erp.service.depot.DepotService;
+import com.jsh.erp.service.depotHead.DepotHeadService;
+import com.jsh.erp.service.depotItem.DepotItemService;
+import com.jsh.erp.service.material.MaterialService;
 import com.jsh.erp.service.serialNumber.SerialNumberService;
+import com.jsh.erp.utils.BaseResponseInfo;
 import com.jsh.erp.utils.StringUtil;
+import com.sun.org.apache.xerces.internal.impl.dv.dtd.NOTATIONDatatypeValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotNull;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Description
@@ -27,6 +37,18 @@ public class SerialNumberController {
 
     @Resource
     private SerialNumberService serialNumberService;
+
+    @Resource
+    private MaterialService materialService;
+
+    @Resource
+    private DepotHeadService depotHeadService;
+
+    @Resource
+    private DepotItemService depotItemService;
+
+    @Resource
+    private DepotService depotService;
     /**
      * create by: cjl
      * description:
@@ -129,4 +151,64 @@ public class SerialNumberController {
         return result;
     }
 
+    /**
+     * 根据订单编号和商品id统计序列号数量
+     * @param depotheadId
+     * @return
+     * @throws Exception
+     */
+    @GetMapping(value = "/serialNumber/depotheadId")
+    public Object countByDepothead(@NotNull @RequestParam("depotheadId") Long depotheadId, @NotNull @RequestParam("materialId") Long materialId) throws Exception {
+        BaseResponseInfo res = new BaseResponseInfo();
+        int i= serialNumberService.countByDepothead(depotheadId, materialId);
+        res.code = 200;
+        res.data = i;
+        return res;
+    }
+
+    /**
+     * 根据序列号获取商品信息和库存信息
+     * @param number
+     * @return
+     * @throws Exception
+     */
+    @GetMapping(value = "/serialNumber/materialInfo")
+    public Object materialInfo(@NotNull @RequestParam("number") String number) throws Exception {
+        BaseResponseInfo res = new BaseResponseInfo();
+        Map<String, Object> map = new HashMap<>();
+        /**
+         * 1.获取基本信息
+         */
+        SerialNumber serialNumber= serialNumberService.findByNumber(number);
+        map.put("serialNumber", serialNumber);
+        try {
+            /**
+             * 2.获取商品信息
+             */
+            if(serialNumber != null){
+                Material material = materialService.selectById(serialNumber.getMaterialId());
+                map.put("material", material);
+                DepotHead depotHead = depotHeadService.selectById(serialNumber.getDepotheadId());
+                if(material != null && depotHead!= null){
+                    DepotItem depotItem = depotItemService.getByHiAndMi(material.getId(), depotHead.getId());
+                    /**
+                     * 获取仓库信息
+                     */
+                    if(depotItem.getDepotid() != null){
+                        Depot depot = depotService.getDepot(depotItem.getDepotid());
+                        map.put("depot", depot);
+                    }
+                }
+            }
+
+            res.code = 200;
+            res.data = map;
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.code = 500;
+            res.data = "获取数据失败";
+        }
+
+        return res;
+    }
 }

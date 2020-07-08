@@ -1,6 +1,7 @@
 package com.jsh.erp.service.serialNumber;
 
 import com.alibaba.fastjson.JSONObject;
+import com.jsh.erp.bean.dto.ScanInDto;
 import com.jsh.erp.constants.BusinessConstants;
 import com.jsh.erp.constants.ExceptionConstants;
 import com.jsh.erp.datasource.entities.*;
@@ -524,5 +525,53 @@ public class SerialNumberService {
         }
         return result;
 
+    }
+
+
+    public int countByDepothead(Long depotheadId, Long materialId) {
+        SerialNumberExample example  = new SerialNumberExample();
+        example.or().andDepotheadIdEqualTo(depotheadId).andMaterialIdEqualTo(materialId).andDeleteFlagNotEqualTo(BusinessConstants.DELETE_FLAG_DELETED);
+        return serialNumberMapper.countByExample(example);
+    }
+
+    @Transactional(value = "transactionManager", rollbackFor = Exception.class)
+    public SerialNumber updateSerialNumber(ScanInDto dto) throws Exception {
+        logService.insertLog("序列号",
+                new StringBuffer(BusinessConstants.LOG_OPERATION_TYPE_IN).append(dto.getSerialNumber()).toString(),
+                ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest());
+        if(dto==null){
+            return null;
+        }
+        SerialNumber serialNumber = new SerialNumber();
+        Date date=new Date();
+        serialNumber.setUpdateTime(date);
+        User userInfo=userService.getCurrentUser();
+        serialNumber.setUpdater(userInfo==null?null:userInfo.getId());
+        serialNumber.setMaterialId(dto.getMaterialId());
+        serialNumber.setDepotheadId(dto.getDepotheadId());
+        serialNumber.setSerialNumber(dto.getSerialNumber());
+        int result=0;
+        try{
+            SerialNumberExample example = new SerialNumberExample();
+            example.or().andSerialNumberEqualTo(dto.getSerialNumber()).andMaterialIdEqualTo(dto.getMaterialId()).andDeleteFlagEqualTo(BusinessConstants.DELETE_FLAG_EXISTS);
+            result = serialNumberMapper.updateByExampleSelective(serialNumber, example);
+        }catch(Exception e){
+            JshException.writeFail(logger, e);
+        }
+        if(result>0){
+            return serialNumber;
+        }
+        return null;
+    }
+
+
+    public SerialNumber findByNumber(String number) {
+        SerialNumberExample example = new SerialNumberExample();
+        example.or().andSerialNumberEqualTo(number).andDeleteFlagEqualTo(BusinessConstants.DELETE_FLAG_EXISTS);
+        List<SerialNumber> serialNumbers = serialNumberMapper.selectByExample(example);
+        if(serialNumbers.size() > 0){
+            return serialNumbers.get(0);
+        }
+        return null;
     }
 }

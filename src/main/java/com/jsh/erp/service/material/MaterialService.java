@@ -86,7 +86,10 @@ public class MaterialService {
 
     public List<MaterialVo4Unit> select(String name, String standard, String model, String categoryIds,String mpList, int offset, int rows)
             throws Exception{
-        String[] mpArr = mpList.split(",");
+        String[] mpArr = new String[]{};
+        if(StringUtils.isNotEmpty(mpList)){
+            mpArr = mpList.split(",");
+        }
         List<MaterialVo4Unit> resList = new ArrayList<MaterialVo4Unit>();
         List<MaterialVo4Unit> list =null;
         try{
@@ -323,6 +326,11 @@ public class MaterialService {
             JshException.readFail(logger, e);
         }
         return list;
+    }
+
+
+    public Material selectById(Long id) throws Exception{
+        return materialMapper.selectByPrimaryKey(id);
     }
 
     public List<MaterialVo4Unit> findByIdWithBarCode(Long meId)throws Exception{
